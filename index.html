@@ -1,9 +1,97 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title></title>
-</head>
-<body>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Real time flight tracker</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+    </style>
+    <script type="text/javascript" src="https://rawgit.com/deepstreamIO/deepstream.io-client-js/master/dist/deepstream.min.js"></script>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+      let map
+      let client
+      const markers = {}
+      const icon = 'https://en.spitogatos.gr/visualCaptcha/images/airplane.png'
 
-</body>
+      function addFlightTracking(flightId) {
+        const record = client.record.getRecord(String(flightId))
+        const marker = new google.maps.Marker({
+            map: map,
+            icon
+        })
+
+        record.whenReady((record) => {
+          marker.setPosition(record.get())
+        })
+
+        record.subscribe(data => {
+          marker.setPosition(data)
+        })
+
+        markers[flightId] = marker
+      }
+
+      function removeFlightTracking(trackingId) {
+        markers[ trackingId ].setMap( null );
+        delete markers[ trackingId ];
+      }
+
+      function renderList( list ) {
+        list.getEntries().forEach(addFlightTracking)
+        list.on('entry-added', addFlightTracking)
+        list.on('entry-removed', removeFlightTracking)
+      }
+
+      function initDeepstreamClient() {
+        client = deepstream('<Your app URL>')
+        client.login({}, () => {
+          const list = client.record.getList('flights')
+          list.whenReady(renderList)
+        });
+      }
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 12,
+          center: {lat: 52.52220663, lng: 13.40849051},
+          styles: [
+            {
+              featureType: 'all',
+              stylers: [
+                { saturation: -80 }
+              ]
+            },{
+              featureType: 'road.arterial',
+              elementType: 'geometry',
+              stylers: [
+                { hue: '#00ffee' },
+                { saturation: 50 }
+              ]
+            },{
+              featureType: 'poi.business',
+              elementType: 'labels',
+              stylers: [
+                { visibility: 'off' }
+              ]
+            }
+          ]
+        })
+        initDeepstreamClient()
+      }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBm8FqDM3TZ6k2zRxwVhvFA2DVaBwq6qps&callback=initMap">
+    </script>
+  </body>
 </html>
