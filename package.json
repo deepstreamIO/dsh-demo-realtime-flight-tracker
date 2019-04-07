@@ -10,6 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "deepstream.io-client-js": "^2.1.2",
-    "needle": "^1.6.0"
+    "needle": "^2.2.4"
   }
 }
